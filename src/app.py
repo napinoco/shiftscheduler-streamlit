@@ -2,7 +2,7 @@ import pandas as pd
 import pulp
 import streamlit as st
 
-from src.shift_scheduler.ShiftScheduler import ShiftScheduler
+from shift_scheduler.ShiftScheduler import ShiftScheduler
 
 st.title("Shift scheduling app")
 tab1, tab2, tab3 = st.tabs(["Calendar", "Staff", "Create Work Shift"])
