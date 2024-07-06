@@ -51,13 +51,25 @@ with tab3:
         st.write("Please upload the calendar information")
     if staff_file is None:
         st.write("Please upload the staff information")
+
     if staff_file is not None and calendar_file is not None:
         optimize_button = st.button("Run Optimization")
     else:
         optimize_button = st.button("Run with Example Data")
+
+    staff_penalty = {}
+    for id in staff_data["スタッフID"].values:
+        staff_penalty[id] = st.slider(
+            f"{id}'s penalty",
+            min_value=0,
+            max_value=100,
+            value=50,
+            key=id,
+        )
+
     if optimize_button:
         shift_scheduler = ShiftScheduler()
-        shift_scheduler.set_data(staff_data, calendar_data)
+        shift_scheduler.set_data(staff_data, calendar_data, staff_penalty)
         shift_scheduler.build_model()
         shift_scheduler.solve()
 

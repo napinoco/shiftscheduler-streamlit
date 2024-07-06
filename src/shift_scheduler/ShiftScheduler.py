@@ -28,7 +28,10 @@ class ShiftScheduler:
         self.status = -1  # 最適化結果のステータス
         self.sch_df = None  # シフト表を表すデータフレーム
 
-    def set_data(self, staff_df, calendar_df):
+        # スタッフごとの重みペナルティ、各スタッフについてデフォルトは50として辞書を作成
+        self.S2penalty_weight = {s: 50 for s in self.S}
+
+    def set_data(self, staff_df, calendar_df, staff_penalty):
         # リストの設定
         self.S = staff_df["スタッフID"].tolist()
         self.D = calendar_df["日付"].tolist()
@@ -44,6 +47,9 @@ class ShiftScheduler:
         self.D2required_staff = D2Dic["出勤人数"]
         self.D2required_leader = D2Dic["責任者人数"]
 
+        # スタッフ希望違反のペナルティーの設定
+        self.S2penalty_weight = staff_penalty
+
     def show(self):
         print("=" * 50)
         print("Staffs:", self.S)
@@ -56,6 +62,8 @@ class ShiftScheduler:
 
         print("Date Required Staff:", self.D2required_staff)
         print("Date Required Leader:", self.D2required_leader)
+
+        print("Staff Penalty Weight:", self.S2penalty_weight)
         print("=" * 50)
 
     def build_model(self):
@@ -91,9 +99,12 @@ class ShiftScheduler:
             )
 
         ### 目的関数とスラック変数の定義 ###
-        # 各スタッフの勤務希望日数の不足数と超過数を最小化する
-        self.model += pulp.lpSum([self.y_under[s] for s in self.S]) + pulp.lpSum(
-            [self.y_over[s] for s in self.S]
+        # 各スタッフの勤務希望日数の不足数と超過数を、重みペナルティを考慮して最小化する
+        self.model += pulp.lpSum(
+            [
+                self.S2penalty_weight[s] * (self.y_under[s] + self.y_over[s])
+                for s in self.S
+            ]
         )
 
         # 各スタッフに対して、y_under[s]は勤務希望日数の不足数を表す
@@ -122,11 +133,11 @@ class ShiftScheduler:
 
 
 if __name__ == "__main__":
-    staff_df = pd.read_csv("staff.csv")
-    calendar_df = pd.read_csv("calendar.csv")
-
+    staff_df = pd.read_csv("data/staff.csv")
+    calendar_df = pd.read_csv("data/calendar.csv")
+    staff_penalty = {s: 50 for s in staff_df["スタッフID"]}
     shift_sch = ShiftScheduler()
-    shift_sch.set_data(staff_df, calendar_df)
+    shift_sch.set_data(staff_df, calendar_df, staff_penalty)
     shift_sch.show()
 
     shift_sch.build_model()
